@@ -1,0 +1,222 @@
+#!/bin/bash
+############################################################
+#									     #
+#		TP SISTEMAS OPERATIVOS				     #
+#			1ER CUATRIMESTRE 2011                    #
+#				COMANDO: POSTINI                   #
+#					Autor: M. Quinteros          #
+#                                                          #
+############################################################
+
+printVariables() {
+if [ $GRUPO ]; then
+   echo " GRUPO:    		   $GRUPO"
+fi
+if [ $ARRIDIR ]; then
+   echo " ARRIDIR:    		   $ARRIDIR"
+fi
+if [ $LOGDIR ]; then
+   echo " LOGDIR:		$LOGDIR"
+fi
+if [ $BINDIR ]; then
+   echo " BINDIR:		   $BINDIR"
+fi
+if [ $CONFDIR ]; then
+   echo " CONFDIR:		   $CONFDIR"
+fi
+if [ $RECHDIR ]; then
+   echo " RECHDIR:		   $RECHDIR"
+fi
+if [ $PATH_DATA ]; then
+   echo " PATH_DATA:		   $PATH_DATA"
+fi
+if [ $NUEVODIR ]; then
+   echo " NUEVODIR:		   $NUEVODIR"
+fi
+if [ $LISTDIR ]; then
+   echo " LISTDIR:		   $LISTDIR"
+fi
+echo ""
+}
+
+
+OK=0
+AMBIENTE_YA_INICILIZADO=1
+ARCH_BENEFICIOS_NO_EXISTE=2
+ARCH_AGENCIAS_NO_EXISTE=3
+DEMONIO_YA_ESTA_CORRIENDO=4
+INSTALACION_NO_FUE_EXITOSA=5
+IMPOSIBLE_INICIALIZAR=6
+
+#inicializo el codigo de retorno
+returncode=$OK
+
+ACTUAL=$PWD
+
+#Check de variable grupo ya inicializada
+if [ $returncode -eq $OK ]; then
+   if [ $GRUPO ]; then
+      echo ""
+      echo "POSTINI - La variable GRUPO ya se encuentra inicializada con el valor:  $GRUPO"
+	echo ""
+	echo "Variables :"
+	printVariables
+      returncode=$AMBIENTE_YA_INICILIZADO
+   else
+	if [ -f "$ACTUAL/conf/config.conf" ]; then 
+		GRUPO=`cut -f1 -d '
+' "$ACTUAL/conf/config.conf" | cut -f3 -d ' '`
+		if [ ! -d "$GRUPO" ]; then
+			echo "Inicializacion de Ambiente No fue exitosa. Directorio inexistente"
+			GRUPO=""
+			returncode=$IMPOSIBLE_INICIALIZAR
+		fi
+	else
+		echo "Inicializacion de Ambiente NO fue exitosa. Error al configurar la variable GRUPO. Archivo de configuracion no encontrado"
+		returncode=$IMPOSIBLE_INICIALIZAR
+	fi
+   fi
+fi
+
+esOk=`expr 1 = $(expr $returncode = $OK)`
+esAmb=`expr 1 = $(expr $returncode = $AMBIENTE_YA_INICILIZADO)`
+
+echo "$esOk    0 si codigo de retorno es ok"
+echo "$esAmb    0 si codigo de retorno es ambiente incializado"
+
+#veo si existe el archivo de configuracion
+if [ $esOk -eq 1 ]; then
+	echo "entro a ver el archivo de config de instula----no deberia entrar" 
+	if [ ! -f "$GRUPO/conf/Instula.conf" ]; then
+		echo "Inicializacion de Ambiente NO fue exitosa. Error en la instalacion"
+		GRUPO=""		
+		returncode=$INSTALACION_NO_FUE_EXITOSA
+	elif [  ! -s "$GRUPO/conf/Instula.conf" ]; then
+		echo "Inicializacion de Ambiente NO fue exitosa. Error en la instalacion"
+		GRUPO=""		
+		returncode=$INSTALACION_NO_FUE_EXITOSA
+	else
+	#tomo la linea 1
+CURRDIR=`cut -f1 -d'
+' "$GRUPO/conf/Instula.conf" | cut -f3 -d' '`
+
+CONFDIR=`cut -f2 -d'
+' "$GRUPO/conf/Instula.conf" | cut -f3 -d' '`
+
+BINDIR=`cut -f3 -d'
+' "$GRUPO/conf/Instula.conf" | cut -f3 -d' '`
+
+LOGDIR=`cut -f6 -d'
+' "$GRUPO/conf/Instula.conf" | cut -f3 -d' '`
+
+ARRIDIR=`cut -f4 -d'
+' "$GRUPO/conf/Instula.conf" | cut -f3 -d' '`
+
+RECHDIR="$GRUPO/rechazados"
+NUEVODIR="$GRUPO/nuevo"
+LISTDIR="$GRUPO/list"
+	fi
+fi
+
+# Seteo la variables para ser utilizadas por los comandos
+if [ $esOk -eq 1 ]; then
+	PATH_DATA="$GRUPO/data"
+fi
+
+if [ $esAmb -eq 1 ]; then
+	PATH_DATA="$GRUPO/data"
+fi
+
+#count=`expr $(ls "$PATH_DATA/beneficios.mae" | wc -w)`
+
+
+if [ $esOk -eq 1 ]
+then
+#   if [ $count -eq 0 ]; then
+   if [ ! -f "$PATH_DATA/beneficios.mae" ]; then
+      echo ""
+      echo "POSTINI - Inicializacion de ambiente no fue exitosa. El archivo maestro de beneficios no existe"
+      GRUPO=""
+	returncode=$ARCH_BENEFICIOS_NO_EXISTE
+   fi
+fi
+
+if [ $esAmb -eq 1 ]
+then
+#   if [ $count -eq 0 ]; then
+   if [ ! -f "$PATH_DATA/beneficios.mae" ]; then
+      echo ""
+      echo "POSTINI - Inicializacion de ambiente no fue exitosa. El archivo maestro de beneficios no existe"
+      GRUPO=""
+	returncode=$ARCH_BENEFICIOS_NO_EXISTE
+   fi
+fi
+
+#count=`expr $(ls "$PATH_DATA/agencias.mae" | wc -w)`
+
+if [ $esOk -eq 1 ]
+then
+#   if [ $count -eq 0 ]; then
+    if [ ! -f "$PATH_DATA/agencias.mae" ]; then
+      echo ""
+      echo "POSTINI - Inicializacion de ambiente no fue exitosa. El archivo de agencias no existe"
+      GRUPO=""
+      returncode=$ARCH_AGENCIAS_NO_EXISTE
+   fi
+fi
+
+if [ $esAmb -eq 1 ]
+then
+#   if [ $count -eq 0 ]; then
+    if [ ! -f "$PATH_DATA/agencias.mae" ]; then
+      echo ""
+      echo "POSTINI - Inicializacion de ambiente no fue exitosa. El archivo de agencias no existe"
+      GRUPO=""
+      returncode=$ARCH_AGENCIAS_NO_EXISTE
+   fi
+fi
+
+
+if [ $returncode -eq $OK ]; then
+   echo ""
+   echo "----------------------------------------------------------"
+   echo "----        Inicialización de Ambiente Concluída      ----"
+   echo "----                     Ambiente                     ----"
+   echo "----------------------------------------------------------"
+   printVariables
+   echo "----------------------------------------------------------"
+
+   # seteamos el PATH
+   export PATH=$PATH:"$GRUPO/inst"
+
+   #exportamos las variables de entorno
+   export GRUPO
+   export ARRIDIR
+   export RECHDIR
+   export LOGDIR
+   export BINDIR
+   export CONFDIR
+   export NUEVODIR
+   export LISTDIR
+fi
+
+
+### Check if daemon is running 
+if [ $returncode -eq $OK ]; then
+    cant=`expr $(ps -eo args | grep "postonio" | grep -v grep | wc -l)`
+    if [ $cant -eq 0 ]; then
+#echo "No se encuentra postonio corriendo."
+#	postonio &
+		pid="$(ps -eo pid,args | grep "postonio"| grep -v grep | cut -c1-6)"
+		echo "----------------------------------------------------------"
+		echo " POSTONIO - Demonio corriendo bajo el no: $pid"
+		echo "----------------------------------------------------------"
+   else 
+      echo ""
+      echo "POSTINI - Inicializacion de ambiente no fue exitosa. El demonio POSTONIO se encuentra corriendo."      
+	returncode=$DEMONIO_YA_ESTA_CORRIENDO
+   fi
+fi
+
+
+#exit $returncode
